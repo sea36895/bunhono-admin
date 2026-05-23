@@ -1,124 +1,45 @@
 import { Hono } from 'hono';
+import { homePage, movieDetailPage, searchPage, categoryPage, notFoundPage } from '../views/templates';
 import { movies } from '../data/movies';
-import type { Movie } from '../data/types';
-import { sanitizeInput } from '../middleware/security';
 
-const adminMovies = new Hono();
+const moviesRouter = new Hono();
 
-adminMovies.get('/create', async (c) => {
-  const { movieFormPage } = await import('../views/admin');
-  return c.html(movieFormPage());
+moviesRouter.get('/', (c) => {
+  // 简单的用户获取 - 在实际项目中应该从认证中间件获取
+  return c.html(homePage(movies));
 });
 
-adminMovies.post('/create', async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    
-    const title = sanitizeInput(body.title as string);
-    const year = parseInt(body.year as string);
-    const duration = parseInt(body.duration as string);
-    const rating = parseFloat(body.rating as string);
-    const genre = (body.genre as string).split(',').map(g => sanitizeInput(g.trim()));
-    const director = sanitizeInput(body.director as string);
-    const cast = (body.cast as string).split(',').map(a => sanitizeInput(a.trim()));
-    const poster = sanitizeInput(body.poster as string);
-    const description = sanitizeInput(body.description as string);
-    
-    if (!title || isNaN(year) || isNaN(duration) || isNaN(rating)) {
-      const { movieFormPage } = await import('../views/admin');
-      return c.html(movieFormPage(undefined, '请填写所有必填字段'), 400);
-    }
-    
-    const newMovie: Movie = {
-      id: (movies.length + 1).toString(),
-      title,
-      year,
-      duration,
-      rating,
-      genre,
-      director,
-      cast,
-      poster,
-      description
-    };
-    
-    movies.push(newMovie);
-    
-    return c.redirect('/admin/movies');
-  } catch (error) {
-    console.error('Create movie error:', error);
-    const { movieFormPage } = await import('../views/admin');
-    return c.html(movieFormPage(undefined, '创建失败，请稍后重试'), 500);
-  }
-});
-
-adminMovies.get('/edit/:id', async (c) => {
+moviesRouter.get('/movie/:id', (c) => {
   const id = c.req.param('id');
   const movie = movies.find(m => m.id === id);
   
   if (!movie) {
-    return c.redirect('/admin/movies');
+    return c.html(notFoundPage(), 404);
   }
   
-  const { movieFormPage } = await import('../views/admin');
-  return c.html(movieFormPage(movie));
+  return c.html(movieDetailPage(movie));
 });
 
-adminMovies.post('/update', async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    const id = body.id as string;
-    
-    const movieIndex = movies.findIndex(m => m.id === id);
-    
-    if (movieIndex === -1) {
-      return c.redirect('/admin/movies');
-    }
-    
-    const title = sanitizeInput(body.title as string);
-    const year = parseInt(body.year as string);
-    const duration = parseInt(body.duration as string);
-    const rating = parseFloat(body.rating as string);
-    const genre = (body.genre as string).split(',').map(g => sanitizeInput(g.trim()));
-    const director = sanitizeInput(body.director as string);
-    const cast = (body.cast as string).split(',').map(a => sanitizeInput(a.trim()));
-    const poster = sanitizeInput(body.poster as string);
-    const description = sanitizeInput(body.description as string);
-    
-    if (!title || isNaN(year) || isNaN(duration) || isNaN(rating)) {
-      const { movieFormPage } = await import('../views/admin');
-      return c.html(movieFormPage(movies[movieIndex], '请填写所有必填字段'), 400);
-    }
-    
-    movies[movieIndex] = {
-      id,
-      title,
-      year,
-      duration,
-      rating,
-      genre,
-      director,
-      cast,
-      poster,
-      description
-    };
-    
-    return c.redirect('/admin/movies');
-  } catch (error) {
-    console.error('Update movie error:', error);
-    return c.redirect('/admin/movies');
-  }
-});
-
-adminMovies.get('/delete/:id', async (c) => {
-  const id = c.req.param('id');
-  const movieIndex = movies.findIndex(m => m.id === id);
+moviesRouter.get('/search', (c) => {
+  const query = c.req.query('q') || '';
+  const searchQuery = query.toLowerCase();
   
-  if (movieIndex !== -1) {
-    movies.splice(movieIndex, 1);
-  }
+  const filteredMovies = movies.filter(m => 
+    m.title.toLowerCase().includes(searchQuery) ||
+    m.description.toLowerCase().includes(searchQuery) ||
+    m.genre.some(g => g.toLowerCase().includes(searchQuery)) ||
+    m.director.toLowerCase().includes(searchQuery) ||
+    m.cast.some(a => a.toLowerCase().includes(searchQuery))
+  );
   
-  return c.redirect('/admin/movies');
+  return c.html(searchPage(filteredMovies, query));
 });
 
-export default adminMovies;
+moviesRouter.get('/category/:genre', (c) => {
+  const genre = decodeURIComponent(c.req.param('genre'));
+  const filteredMovies = movies.filter(m => m.genre.includes(genre));
+  
+  return c.html(categoryPage(filteredMovies, genre));
+});
+
+export default moviesRouter;
