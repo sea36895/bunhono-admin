@@ -26,7 +26,7 @@ function getTokenFromCookie(c: any): string | null {
   return tokenMatch ? tokenMatch[1] : null;
 }
 
-function isAuthenticated(c: any): { isAuthenticated: boolean; user: any } {
+function checkAuth(c: any): { isAuthenticated: boolean; user: any } {
   const token = getTokenFromCookie(c);
   if (!token) {
     return { isAuthenticated: false, user: null };
@@ -94,7 +94,7 @@ app.get('/register', (c) => {
 });
 
 app.get('/profile', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -185,7 +185,7 @@ app.get('/api/auth/logout', (c) => {
 });
 
 app.get('/admin', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -204,7 +204,7 @@ app.get('/admin', (c) => {
 });
 
 app.get('/admin/movies', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -216,7 +216,7 @@ app.get('/admin/movies', (c) => {
 });
 
 app.get('/admin/movies/create', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -228,7 +228,7 @@ app.get('/admin/movies/create', (c) => {
 });
 
 app.post('/admin/movies/create', async (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -275,7 +275,7 @@ app.post('/admin/movies/create', async (c) => {
 });
 
 app.get('/admin/movies/edit/:id', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -294,7 +294,7 @@ app.get('/admin/movies/edit/:id', (c) => {
 });
 
 app.post('/admin/movies/update', async (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -347,7 +347,7 @@ app.post('/admin/movies/update', async (c) => {
 });
 
 app.get('/admin/movies/delete/:id', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
@@ -366,7 +366,7 @@ app.get('/admin/movies/delete/:id', (c) => {
 });
 
 app.get('/admin/users', (c) => {
-  const { isAuthenticated, user } = isAuthenticated(c);
+  const { isAuthenticated, user } = checkAuth(c);
   if (!isAuthenticated) {
     return c.redirect('/login');
   }
